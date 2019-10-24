@@ -106,7 +106,40 @@ void Raytracer::LoadScene( const std::string file_name )
 Color4f Raytracer::get_pixel( const int x, const int y, const float t )
 {
 	// TODO generate primary ray and perform ray cast on the scene
-	return Color4f{ 1.0f, 0.0f, 1.0f, 1.0f };
+
+	// Setup a hit
+	RTCHit hit;
+	hit.geomID = RTC_INVALID_GEOMETRY_ID;
+	hit.primID = RTC_INVALID_GEOMETRY_ID;
+	hit.Ng_x = 0.0f; // geometry normal
+	hit.Ng_y = 0.0f;
+	hit.Ng_z = 0.0f;
+
+	RTCIntersectContext context;
+	rtcInitIntersectContext(&context);
+
+	// Merge ray and hit structures
+	RTCRayHit ray_hit;
+	ray_hit.ray = camera_.GenerateRay(x, y);
+	ray_hit.hit = hit;
+	rtcIntersect1(scene_, &context, &ray_hit);
+
+	if (ray_hit.hit.geomID != RTC_INVALID_GEOMETRY_ID)
+	{
+		// we hit something
+		RTCGeometry geometry = rtcGetGeometry(scene_, ray_hit.hit.geomID);
+		Normal3f normal;
+		// get interpolated normal
+		rtcInterpolate0(geometry, ray_hit.hit.primID, ray_hit.hit.u, ray_hit.hit.v,
+			RTC_BUFFER_TYPE_VERTEX_ATTRIBUTE, 0, &normal.x, 3);
+		// and texture coordinates
+		Coord2f tex_coord;
+		rtcInterpolate0(geometry, ray_hit.hit.primID, ray_hit.hit.u, ray_hit.hit.v,
+			RTC_BUFFER_TYPE_VERTEX_ATTRIBUTE, 1, &tex_coord.u, 2);
+		return Color4f{ 0.0f, normal.x, 0.0f, 1.0f };
+	}
+	return Color4f{ 1.0f, 1.0f, 1.0f, 1.0f };
+
 }
 
 int Raytracer::Ui()

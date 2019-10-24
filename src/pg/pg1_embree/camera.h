@@ -33,6 +33,8 @@ private:
 
 	float f_y_{ 1.0f }; // focal lenght (px)
 
+	float pixel_size{ 1.0f };
+
 	Matrix3x3 M_c_w_; // transformation matrix from CS -> WS	
 };
 
